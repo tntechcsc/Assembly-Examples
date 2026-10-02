@@ -1,4 +1,4 @@
-; nasm -f elf32 calculator.asm -o a.o
+; nasm -f elf32 division.asm -o a.o
 ; gcc -m32 a.o -o a
 
 section .data
@@ -23,7 +23,7 @@ section .data
     space_len equ 1
     plus db " + "
     plus_len equ $-plus
-    line db "-----------  = "
+    line db "-------  = "
     line_len equ $-line
     r_msg db " R "
     r_msg_len equ 3
@@ -105,7 +105,7 @@ main:
 ; print calc_msg
 ; print a newline
 
-; print a space
+; print 1 space
 ; print a
 ; print plus
 ; print b
@@ -124,3 +124,7 @@ main:
 ; it accounds for the space before a, a, and the space after a
 
 ; print c
+
+; print a newline
+
+; terminate
