@@ -23,7 +23,8 @@ newline DB 10
 
 SECTION .bss
 user_input RESB 2
-result RESB 1
+tens_digit RESB 1
+ones_digit RESB 1
 
 SECTION .text
 global main
@@ -71,14 +72,36 @@ min:
     ; set min variable = 100
     mov al, 100
 
-    ; for index 0-array_len
-        ; if min > array[index], min = array[index]
+    ; for (i=0; i<array_len; i++)
+    ; Here we move the address of array into edx and the index into cl.
+    ; This way we can iterate directly over the elements in the array
+    ; without the issue of finding the offset. At the end of each loop,
+    ; we will increment both the index and the element "pointer" (edx)
+    ; to move onto the next element. Since each element is only 1 byte,
+    ; we only increase edx by 1 each loop. Since EDX holds an address, 
+    ; incrementing it means it will hold the next address now.
+    ; We have to use the full EDX rather than dl because a full address 
+    ; is 32 bits long, so dl won't be large enough to hold an entire address. 
+    mov cl, 0
+    mov edx, array
+    min_loop:
+        cmp cl, array_len                             ; compare cl to array_len
+        jge min_end
+        
+        ; while edx is 4 bytes long, it is being dereferenced. So rather than
+        ; comparing 1 byte in al to 4 bytes in edx, we are actually comparing
+        ; 1 byte in al to 1 byte in memory (at the address in edx).
+        cmp al, [edx]                              ; if min > array[index], min = array[index]
+        jl end_min_if                                  ; if al < [array+cl]: nothing
+        mov al, [edx]                              ; if al > [array+cl]: found a new min
+        end_min_if:
 
-    ; set result = al
-    mov [result], al
+        inc cl
+        inc edx
+        jmp min_loop
 
-    ; jump to end of program
-    jmp end
+    min_end:
+        jmp end
 
 ; else, find max
 max: 
@@ -88,21 +111,50 @@ max:
     mov ecx, max_msg
     mov edx, min_max_msg_len
     int 0x80
+        mov al, -1                          ; set max
 
-        ; set max variable = -1
-        mov al, -1
+        mov cl, 0
+        mov edx, array
+        max_loop:
+            cmp cl, array_len
+            je max_end
 
-        ; for index 0-array_len
-            ; if max < array[index], max = array[index]
+            cmp al, [edx]
+            jg end_max_if                          ; if al > [array+cl]: nothing
+            mov al, [edx]
+            end_max_if:
 
-        ; set result = al
-        mov [result], al
+            inc cl
+            inc edx
+            jmp max_loop
+        
+        max_end:
+
 
 end: 
+; split result into two digits
+; ax / operand = al R ah
+mov ah, 0
+mov bl, 0xA
+div bl
+
+; Convert each digit from int to str
+add al, '0'
+add ah, '0'
+
+mov [tens_digit], al
+mov [ones_digit], ah
+
 ; print result
 mov eax, 4
 mov ebx, 1
-mov ecx, result
+mov ecx, tens_digit
+mov edx, 1 
+int 0x80
+
+mov eax, 4
+mov ebx, 1
+mov ecx, ones_digit
 mov edx, 1 
 int 0x80
 
